@@ -10,6 +10,7 @@
 		"eslint": "^4.8.0",
 		"react": "16.0.0-alpha.12",
 		"react-native": "0.48.4",
+		"react-native-atoz-list": "^1.0.2",
 		"react-native-contacts": "^1.0.2",
 		"react-native-navigation": "^1.1.235"
 	},

@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import Contacts from 'react-native-contacts';
+import AtoZList from 'react-native-atoz-list';
 
 class ContactList extends Component {
   static navigatorButtons = {
@@ -32,7 +33,7 @@ class ContactList extends Component {
     super(props);
     // if you want to listen on navigator events, set this up
     this.props.navigator.setOnNavigatorEvent(this.onNavigatorEvent.bind(this));
-    this.state = { contacts: [] };
+    this.state = { contacts: {} };
   }
 
   onNavigatorEvent(event) { // this is the onPress handler for the two buttons together
@@ -48,19 +49,55 @@ class ContactList extends Component {
       if (err === 'denied') {
         // x.x
       } else {
-        this.setState({ contacts });
+        const groupedNames = contacts
+          .sort((c1, c2) => c1.familyName.toUpperCase() < c2.familyName.toUpperCase() ? -1 : 1)
+          .reduce((group, c) => {
+            const lastInitial = (c.familyName || ' ').toUpperCase()[0];
+            if (!group[lastInitial]) {
+              group[lastInitial] = [];
+            }
+            group[lastInitial].push(c);
+            return group;
+          }, {});
+        this.setState({ contacts: groupedNames });
       }
     })
   }
 
+  _renderCellComponent = (data) => {
+    return (
+      <View style={styles.cell}>
+        <View style={[styles.placeholderCircle, {}]}>
+          <Text style={styles.placeholderCircleText}>{data.givenName[0]}{data.familyName[0]}</Text>
+        </View>
+        <Text style={styles.name}>
+          {data.givenName} {data.familyName}
+        </Text>
+      </View>
+    );
+  };
+
+  _renderSectionComponent = (data) => {
+    return (
+      <View style={{ height: 35, justifyContent: 'center', backgroundColor: '#eee', paddingLeft: 10 }}>
+        <Text>{data.sectionId}</Text>
+      </View>
+    )
+  };
+
   render() {
     return (<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
       <View>
-        {this.state.contacts.map(c => (
-          <Text key={c.recordID} style={styles.header}>{JSON.stringify(c, 2, 2)}</Text>
-        ))}
+        <AtoZList
+          sectionHeaderHeight={20}
+          cellHeight={60}
+          data={this.state.contacts}
+          renderCell={this._renderCellComponent}
+          renderSection={this._renderSectionComponent}
+        >
+        </AtoZList>
       </View>
-    </ScrollView>)
+    </ScrollView >)
   }
 }
 
@@ -84,5 +121,43 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '400',
     textAlign: 'left',
+  },
+  swipeContainer: {
+  },
+  alphabetSidebar: {
+    position: 'absolute',
+    backgroundColor: 'transparent',
+    top: 0,
+    bottom: 0,
+    right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderCircle: {
+    width: 50,
+    height: 50,
+    backgroundColor: '#444',
+    borderRadius: 25,
+    marginRight: 10,
+    marginLeft: 5,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeholderCircleText: {
+    color: '#eee',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  name: {
+    fontSize: 15,
+  },
+  cell: {
+    height: 95,
+    borderBottomColor: '#ccc',
+    borderBottomWidth: 1,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });

@@ -3629,6 +3629,10 @@ react-devtools-core@^2.5.0:
     shell-quote "^1.6.1"
     ws "^2.0.3"
 
+react-native-atoz-list@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/react-native-atoz-list/-/react-native-atoz-list-1.0.2.tgz#799eec8d4c65b929d218b52ce52304b318de47e3"
+
 react-native-contacts@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/react-native-contacts/-/react-native-contacts-1.0.2.tgz#58b3b0572e3972a320c731ff639091b013a3c4b0"
