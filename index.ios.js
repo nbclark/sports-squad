@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 
-import Home from './home';
+import Home from './src/home';
+
 Navigation.startSingleScreenApp({
   screen: Home,
 });

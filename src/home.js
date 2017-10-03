@@ -16,6 +16,7 @@ import {
 import { Navigation } from 'react-native-navigation';
 
 import Invite from './invite'
+import ContactList from './contacts'
 
 const padding = 7;
 const width = ((Dimensions.get("window").width) - padding) / 2;

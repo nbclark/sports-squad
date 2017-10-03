@@ -10,12 +10,15 @@ import {
   StyleSheet,
   Text,
   View,
+  ScrollView,
   Dimensions,
-  TouchableOpacity
+  TouchableOpacity,
+  AsyncStorage,
 } from 'react-native';
 import { Navigation } from 'react-native-navigation';
+import Contacts from 'react-native-contacts';
 
-class Invite extends Component {
+class ContactList extends Component {
   static navigatorButtons = {
     rightButtons: [
       {
@@ -29,6 +32,7 @@ class Invite extends Component {
     super(props);
     // if you want to listen on navigator events, set this up
     this.props.navigator.setOnNavigatorEvent(this.onNavigatorEvent.bind(this));
+    this.state = { contacts: [] };
   }
 
   onNavigatorEvent(event) { // this is the onPress handler for the two buttons together
@@ -39,32 +43,46 @@ class Invite extends Component {
     }
   }
 
+  componentDidMount() {
+    Contacts.getAll((err, contacts) => {
+      if (err === 'denied') {
+        // x.x
+      } else {
+        this.setState({ contacts });
+      }
+    })
+  }
 
   render() {
-    return (<View style={styles.container}>
-      <Text style={styles.header}>{this.props.sport}</Text>
-    </View>)
+    return (<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
+      <View>
+        {this.state.contacts.map(c => (
+          <Text key={c.recordID} style={styles.header}>{JSON.stringify(c, 2, 2)}</Text>
+        ))}
+      </View>
+    </ScrollView>)
   }
 }
 
-Navigation.registerComponent('Invite', () => Invite);
-
-
+Navigation.registerComponent('ContactList', () => ContactList);
 
 const styles = StyleSheet.create({
-  container: {
+  scrollContainer: {
     flex: 1,
+    backgroundColor: '#eee',
+  },
+  container: {
     justifyContent: 'flex-start',
     alignItems: 'stretch',
     flexDirection: 'column',
-    backgroundColor: '#eee',
-    paddingTop: 20,
-    //flexWrap: 'wrap',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   header: {
     textAlign: 'center',
     color: '#000',
-    fontSize: 40,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '400',
+    textAlign: 'left',
   },
 });
