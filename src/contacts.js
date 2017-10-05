@@ -14,6 +14,8 @@ import {
   Dimensions,
   TouchableOpacity,
   AsyncStorage,
+  ListView,
+  TextInput,
 } from 'react-native';
 import { Navigation } from 'react-native-navigation';
 import Contacts from 'react-native-contacts';
@@ -33,7 +35,7 @@ class ContactList extends Component {
     super(props);
     // if you want to listen on navigator events, set this up
     this.props.navigator.setOnNavigatorEvent(this.onNavigatorEvent.bind(this));
-    this.state = { contacts: {} };
+    this.state = { contacts: [], filteredContacts: {}, selectedIds: {} };
   }
 
   onNavigatorEvent(event) { // this is the onPress handler for the two buttons together
@@ -49,31 +51,77 @@ class ContactList extends Component {
       if (err === 'denied') {
         // x.x
       } else {
-        const groupedNames = contacts
-          .sort((c1, c2) => c1.familyName.toUpperCase() < c2.familyName.toUpperCase() ? -1 : 1)
-          .reduce((group, c) => {
-            const lastInitial = (c.familyName || ' ').toUpperCase()[0];
-            if (!group[lastInitial]) {
-              group[lastInitial] = [];
-            }
-            group[lastInitial].push(c);
-            return group;
-          }, {});
-        this.setState({ contacts: groupedNames });
+        const contactsWithSearch = contacts.map((c) => ({ ...c, searchText: `${c.familyName || ''} ${c.givenName || ''}`.toLowerCase() }));
+        const groupedNames = this.mapContacts(contactsWithSearch);
+        this.setState({ contacts: contactsWithSearch, filteredContacts: groupedNames });
       }
     })
   }
 
+  mapContacts = (contacts) => {
+    return contacts.
+      sort((c1, c2) => c1.familyName.toUpperCase() < c2.familyName.toUpperCase() ? -1 : 1)
+      .reduce((group, c) => {
+        const lastInitial = (c.familyName || ' ').toUpperCase()[0];
+        if (!group[lastInitial]) {
+          group[lastInitial] = [];
+        }
+        group[lastInitial].push({ ...c, selected: this.state.selectedIds[c.recordID] });
+        return group;
+      }, {});
+  }
+
+  onSearchChange = (text) => {
+    const search = text.toLowerCase();
+    const filteredContacts = this.mapContacts(this.state.contacts.filter(c => {
+      return !search || c.searchText.indexOf(search) >= 0;
+    }));
+    console.log(text);
+    console.log(filteredContacts);
+    this.setState({ search: text, filteredContacts });
+  }
+
+  toggleSelection = (data) => {
+    const selectedIds = { ...this.state.selectedIds };
+    const id = data.recordID;
+
+    if (selectedIds[id]) {
+      delete selectedIds[id];
+    } else {
+      selectedIds[id] = data;
+    }
+
+    if (Object.keys(selectedIds).length > 0) {
+      this.props.navigator.setButtons({
+        leftButtons: [{
+          title: 'Save', // for a textual button, provide the button title (label)
+          id: 'save', // id for this button, given in onNavigatorEvent(event) to help understand which button was clicked
+        }],
+        animated: true // does the change have transition animation or does it happen immediately (optional)
+      });
+    } else {
+      this.props.navigator.setButtons({
+        leftButtons: [],
+        animated: true // does the change have transition animation or does it happen immediately (optional)
+      });
+    }
+
+    this.setState({ selectedIds }, () =>
+      this.onSearchChange('')
+    );
+  }
+
   _renderCellComponent = (data) => {
+    const style = data.selected ? { backgroundColor: 'blue' } : null;
     return (
-      <View style={styles.cell}>
+      <TouchableOpacity style={[styles.cell, style]} onPress={() => this.toggleSelection(data)}>
         <View style={[styles.placeholderCircle, {}]}>
           <Text style={styles.placeholderCircleText}>{data.givenName[0]}{data.familyName[0]}</Text>
         </View>
         <Text style={styles.name}>
           {data.givenName} {data.familyName}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -86,34 +134,37 @@ class ContactList extends Component {
   };
 
   render() {
-    return (<ScrollView style={styles.scrollContainer} contentContainerStyle={styles.container}>
-      <View>
+    console.log('render');
+    return (
+      <View style={styles.container}>
+        <TextInput
+          autoCorrect={false}
+          autoCapitalize="none"
+          keyboardType="email-address" onChangeText={this.onSearchChange} value={this.state.search} placeholder="..." style={{ borderWidth: 1, padding: 10 }} />
         <AtoZList
           sectionHeaderHeight={20}
           cellHeight={60}
-          data={this.state.contacts}
+          data={this.state.filteredContacts}
           renderCell={this._renderCellComponent}
           renderSection={this._renderSectionComponent}
         >
         </AtoZList>
-      </View>
-    </ScrollView >)
+      </View>)
   }
 }
 
 Navigation.registerComponent('ContactList', () => ContactList);
 
 const styles = StyleSheet.create({
-  scrollContainer: {
+  container: {
     flex: 1,
     backgroundColor: '#eee',
-  },
-  container: {
     justifyContent: 'flex-start',
     alignItems: 'stretch',
     flexDirection: 'column',
     paddingVertical: 20,
     paddingHorizontal: 20,
+    backgroundColor: '#fff',
   },
   header: {
     textAlign: 'center',
@@ -156,7 +207,6 @@ const styles = StyleSheet.create({
     height: 95,
     borderBottomColor: '#ccc',
     borderBottomWidth: 1,
-    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
   },
